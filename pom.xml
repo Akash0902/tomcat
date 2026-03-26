@@ -1,300 +1,162 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.example</groupId>
-  <artifactId>tomcat</artifactId><?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <!-- Project Info -->
+    <groupId>com.example</groupId>
+    <artifactId>tomcat</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    <name>tomcat</name>
 
-  <modelVersion>4.0.0</modelVersion>
+    <!-- ===================== -->
+    <!-- Properties -->
+    <!-- ===================== -->
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-  <groupId>com.example</groupId>
-  <artifactId>tomcat</artifactId>
-  <version>1.0.0</version>
-  <packaging>jar</packaging>
+        <junit.jupiter.version>5.10.2</junit.jupiter.version>
+        <maven.surefire.version>3.2.5</maven.surefire.version>
+        <maven.failsafe.version>3.2.5</maven.failsafe.version>
+        <jmeter.maven.plugin.version>3.7.0</jmeter.maven.plugin.version>
+    </properties>
 
-  <name>tomcat</name>
+    <!-- ===================== -->
+    <!-- Dependencies -->
+    <!-- ===================== -->
+    <dependencies>
 
-  <!-- ===================== -->
-  <!-- Project Properties    -->
-  <!-- ===================== -->
-  <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- JUnit 5 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
 
-    <!-- Versions -->
-    <junit.jupiter.version>5.10.2</junit.jupiter.version>
-    <maven.surefire.version>3.2.5</maven.surefire.version>
-    <maven.failsafe.version>3.2.5</maven.failsafe.version>
-    <jmeter.maven.plugin.version>3.7.0</jmeter.maven.plugin.version>
-  </properties>
+    </dependencies>
 
-  <!-- ===================== -->
-  <!-- Dependencies          -->
-  <!-- ===================== -->
-  <dependencies>
-
-    <!-- JUnit 5 -->
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>${junit.jupiter.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-  </dependencies>
-
-  <!-- ===================== -->
-  <!-- Build Plugins         -->
-  <!-- ===================== -->
-  <build>
-    <plugins>
-
-      <!-- Compiler Plugin -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.11.0</version>
-        <configuration>
-          <source>${maven.compiler.source}</source>
-          <target>${maven.compiler.target}</target>
-        </configuration>
-      </plugin>
-
-      <!-- Unit Tests -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven.surefire.version}</version>
-        <configuration>
-          <useModulePath>false</useModulePath>
-          <failIfNoTests>false</failIfNoTests>
-          <includes>
-            <include>**/*Test.java</include>
-          </includes>
-        </configuration>
-      </plugin>
-
-      <!-- Integration Tests -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>${maven.failsafe.version}</version>
-        <configuration>
-          <useModulePath>false</useModulePath>
-          <includes>
-            <include>**/*IT.java</include>
-          </includes>
-        </configuration>
-        <executions>
-          <execution>
-            <id>integration-tests</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
-    </plugins>
-  </build>
-
-  <!-- ===================== -->
-  <!-- Distribution (Nexus)  -->
-  <!-- ===================== -->
-  <!-- Pass these via CI:
-       -Dnexus.releases.url=...
-       -Dnexus.snapshots.url=...
-  -->
-  <distributionManagement>
-    <repository>
-      <id>nexus</id>
-      <url>${nexus.releases.url}</url>
-    </repository>
-    <snapshotRepository>
-      <id>nexus</id>
-      <url>${nexus.snapshots.url}</url>
-    </snapshotRepository>
-  </distributionManagement>
-
-  <!-- ===================== -->
-  <!-- Profiles              -->
-  <!-- ===================== -->
-
-  <profiles>
-
-    <!-- Functional Profile -->
-    <profile>
-      <id>functional</id>
-    </profile>
-
-    <!-- Performance Profile (JMeter) -->
-    <profile>
-      <id>performance</id>
-      <build>
+    <!-- ===================== -->
+    <!-- Build -->
+    <!-- ===================== -->
+    <build>
         <plugins>
-          <plugin>
-            <groupId>com.lazerycode.jmeter</groupId>
-            <artifactId>jmeter-maven-plugin</artifactId>
-            <version>${jmeter.maven.plugin.version}</version>
-            <executions>
-              <execution>
-                <id>jmeter-tests</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>jmeter</goal>
-                </goals>
+
+            <!-- Compiler -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
                 <configuration>
-                  <testFilesIncluded>
-                    <jMeterTestFile>testplan.jmx</jMeterTestFile>
-                  </testFilesIncluded>
-                  <resultsFileFormat>xml</resultsFileFormat>
-                  <ignoreResultFailures>false</ignoreResultFailures>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                 </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
+            </plugin>
 
-  </profiles>
-
-</project>
-  <version>1.0.0</version>
-  <packaging>jar</packaging>
-
-  <name>tomcat</name>
-
-  <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-    <!-- Versions -->
-    <junit.jupiter.version>5.10.2</junit.jupiter.version>
-    <maven.surefire.version>3.2.5</maven.surefire.version>
-    <maven.failsafe.version>3.2.5</maven.failsafe.version>
-    <jmeter.maven.plugin.version>3.7.0</jmeter.maven.plugin.version>
-
-    <!-- Nexus URLs (injected by CI using -D...) -->
-    <nexus.releases.url>${nexus.releases.url}</nexus.releases.url>
-    <nexus.snapshots.url>${nexus.snapshots.url}</nexus.snapshots.url>
-  </properties>
-
-  <dependencies>
-    <!-- Unit testing -->
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>${junit.jupiter.version}</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
-
-  <build>
-    <plugins>
-
-      <!-- Unit tests: mvn test -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven.surefire.version}</version>
-        <configuration>
-          <useModulePath>false</useModulePath>
-          <includes>
-            <include>**/*Test.java</include>
-          </includes>
-        </configuration>
-      </plugin>
-
-      <!-- Functional/Integration tests: mvn verify -Pfunctional -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>${maven.failsafe.version}</version>
-        <configuration>
-          <useModulePath>false</useModulePath>
-          <includes>
-            <include>**/*IT.java</include>
-          </includes>
-        </configuration>
-        <executions>
-          <execution>
-            <id>integration-tests</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
-    </plugins>
-  </build>
-
-  <!-- Optional: Maven artifact deploy to Nexus via mvn deploy -->
-  <distributionManagement>
-    <repository>
-      <id>nexus</id>
-      <url>${nexus.releases.url}</url>
-    </repository>
-    <snapshotRepository>
-      <id>nexus</id>
-      <url>${nexus.snapshots.url}</url>
-    </snapshotRepository>
-  </distributionManagement>
-
-  <profiles>
-
-    <!-- Enable integration tests via Failsafe -->
-    <profile>
-      <id>functional</id>
-      <properties>
-        <!-- keep as marker profile -->
-      </properties>
-    </profile>
-
-    <!-- Performance tests using JMeter -->
-    <profile>
-      <id>performance</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.lazerycode.jmeter</groupId>
-            <artifactId>jmeter-maven-plugin</artifactId>
-            <version>${jmeter.maven.plugin.version}</version>
-            <executions>
-              <execution>
-                <id>jmeter-tests</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>jmeter</goal>
-                </goals>
+            <!-- Unit Tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven.surefire.version}</version>
                 <configuration>
-                  <!-- Expect a plan here: src/test/jmeter/testplan.jmx -->
-                  <testFilesIncluded>
-                    <jMeterTestFile>testplan.jmx</jMeterTestFile>
-                  </testFilesIncluded>
-                  <resultsFileFormat>xml</resultsFileFormat>
-                  <ignoreResultFailures>false</ignoreResultFailures>
+                    <useModulePath>false</useModulePath>
+                    <failIfNoTests>false</failIfNoTests>
+                    <includes>
+                        <include>**/*Test.java</include>
+                    </includes>
                 </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
+            </plugin>
 
-  </profiles>
+            <!-- Integration Tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven.failsafe.version}</version>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                    <includes>
+                        <include>**/*IT.java</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>integration-tests</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+
+    <!-- ===================== -->
+    <!-- Distribution (Optional - For Nexus Deploy) -->
+    <!-- ===================== -->
+    <!-- Pass via CI:
+         -Dnexus.releases.url=...
+         -Dnexus.snapshots.url=...
+    -->
+    <distributionManagement>
+        <repository>
+            <id>nexus</id>
+            <url>${nexus.releases.url}</url>
+        </repository>
+        <snapshotRepository>
+            <id>nexus</id>
+            <url>${nexus.snapshots.url}</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <!-- ===================== -->
+    <!-- Profiles -->
+    <!-- ===================== -->
+    <profiles>
+
+        <!-- Functional Profile -->
+        <profile>
+            <id>functional</id>
+        </profile>
+
+        <!-- Performance Profile -->
+        <profile>
+            <id>performance</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.lazerycode.jmeter</groupId>
+                        <artifactId>jmeter-maven-plugin</artifactId>
+                        <version>${jmeter.maven.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>jmeter-tests</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>jmeter</goal>
+                                </goals>
+                                <configuration>
+                                    <testFilesIncluded>
+                                        <jMeterTestFile>testplan.jmx</jMeterTestFile>
+                                    </testFilesIncluded>
+                                    <resultsFileFormat>xml</resultsFileFormat>
+                                    <ignoreResultFailures>false</ignoreResultFailures>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+    </profiles>
 
 </project>
