@@ -27,7 +27,7 @@ jobs:
 
     - name: Build and Sonar Scan
       run: mvn clean verify sonar:sonar \
-           -Dsonar.host.url=http://YOUR_SONAR_SERVER:9000 \
+           -Dsonar.host.url=${{secrets.SONAR_URL}} \
            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
     - name: Build Docker Image
