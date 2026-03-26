@@ -17,6 +17,123 @@
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <!-- Versions -->
+    <junit.jupiter.version>5.10.2</junit.jupiter.version>
+    <maven.surefire.version>3.2.5</maven.surefire.version>
+    <maven.failsafe.version>3.2.5</maven.failsafe.version>
+    <jmeter.maven.plugin.version>3.7.0</jmeter.maven.plugin.version>
+
+    <!-- Nexus URLs (injected by CI using -D...) -->
+    <nexus.releases.url>${nexus.releases.url}</nexus.releases.url>
+    <nexus.snapshots.url>${nexus.snapshots.url}</nexus.snapshots.url>
   </properties>
 
+  <dependencies>
+    <!-- Unit testing -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+
+      <!-- Unit tests: mvn test -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven.surefire.version}</version>
+        <configuration>
+          <useModulePath>false</useModulePath>
+          <includes>
+            <include>**/*Test.java</include>
+          </includes>
+        </configuration>
+      </plugin>
+
+      <!-- Functional/Integration tests: mvn verify -Pfunctional -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${maven.failsafe.version}</version>
+        <configuration>
+          <useModulePath>false</useModulePath>
+          <includes>
+            <include>**/*IT.java</include>
+          </includes>
+        </configuration>
+        <executions>
+          <execution>
+            <id>integration-tests</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+
+  <!-- Optional: Maven artifact deploy to Nexus via mvn deploy -->
+  <distributionManagement>
+    <repository>
+      <id>nexus</id>
+      <url>${nexus.releases.url}</url>
+    </repository>
+    <snapshotRepository>
+      <id>nexus</id>
+      <url>${nexus.snapshots.url}</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+  <profiles>
+
+    <!-- Enable integration tests via Failsafe -->
+    <profile>
+      <id>functional</id>
+      <properties>
+        <!-- keep as marker profile -->
+      </properties>
+    </profile>
+
+    <!-- Performance tests using JMeter -->
+    <profile>
+      <id>performance</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.lazerycode.jmeter</groupId>
+            <artifactId>jmeter-maven-plugin</artifactId>
+            <version>${jmeter.maven.plugin.version}</version>
+            <executions>
+              <execution>
+                <id>jmeter-tests</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>jmeter</goal>
+                </goals>
+                <configuration>
+                  <!-- Expect a plan here: src/test/jmeter/testplan.jmx -->
+                  <testFilesIncluded>
+                    <jMeterTestFile>testplan.jmx</jMeterTestFile>
+                  </testFilesIncluded>
+                  <resultsFileFormat>xml</resultsFileFormat>
+                  <ignoreResultFailures>false</ignoreResultFailures>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+  </profiles>
+
 </project>
+``
