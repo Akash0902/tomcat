@@ -1,35 +1,26 @@
 # -------------------------------
-# Stage 1: Build (optional)
-# Use only if you want Docker to build the JAR
-# -------------------------------
-# FROM maven:3.9.6-eclipse-temurin-17 AS build
-# WORKDIR /build
-# COPY pom.xml .
-# COPY src ./src
-# RUN mvn -B -ntp clean package -DskipTests
-
-# -------------------------------
-# Stage 2: Runtime (recommended)
+# Runtime Stage (lightweight)
 # -------------------------------
 FROM eclipse-temurin:17-jre-jammy
 
-# Security: non-root user
+# Create non-root user (security best practice)
 RUN useradd -r -u 1001 appuser
 
+# Set working directory
 WORKDIR /app
 
-# Copy the JAR built by GitHub Actions
-# If your artifact name changes, update this line
-COPY target/tomcat-1.0.0.jar app.jar
+# Copy the JAR built by CI (flexible for version changes)
+COPY target/*.jar app.jar
 
-# File ownership
+# Set proper ownership
 RUN chown -R appuser:appuser /app
 
+# Switch to non-root user
 USER appuser
 
-# JVM best practices
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75"
-
+# Expose application port
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+# Run application (proper signal handling)
+ENTRYPOINT ["java"]
+CMD ["-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]
