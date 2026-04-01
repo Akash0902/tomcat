@@ -13,6 +13,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      # Install Maven (mandatory for self-hosted runner)
+      - name: Install Maven
+        run: |
+          sudo apt update
+          sudo apt install -y maven
+
       - name: Set up Java 17
         uses: actions/setup-java@v3
         with:
@@ -20,18 +26,22 @@ jobs:
           java-version: '17'
           cache: 'maven'
 
-      # Single Maven lifecycle (build + test + sonar)
+      # Build + Test + SonarQube Analysis
       - name: Build, Test & Sonar Scan
         run: |
           mvn clean verify sonar:sonar \
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+            -Dsonar.organization=${{ secrets.SONAR_ORG }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       # Build Docker Image
       - name: Build Docker Image
         run: docker build -t tomcat:latest .
 
-      # Login to Nexus (secure method)
+      # Login to Nexus
       - name: Login to Nexus
         run: |
           echo "${{ secrets.NEXUS_PASSWORD }}" | docker login ${{ secrets.NEXUS_URL }} \
