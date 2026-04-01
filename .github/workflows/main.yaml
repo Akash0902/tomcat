@@ -12,35 +12,58 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # ... (Maven and Java steps remain the same) ...
+      # 1. Install Maven
+      - name: Install Maven
+        run: |
+          sudo apt update
+          sudo apt install -y maven
 
-      # 1. Build Docker Image with a Version Tag
-      # Using GITHUB_RUN_NUMBER creates tags like v1, v2, v3...
+      # 2. Set up Java 17
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      # 3. Build + Test + SonarQube Analysis
+      - name: Build, Test & Sonar Scan
+        run: |
+          mvn clean verify sonar:sonar \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+            -Dsonar.organization=${{ secrets.SONAR_ORG }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      # 4. Build Docker Image with Versioning
+      # We tag it locally with the run number first
       - name: Build Docker Image
         run: |
           docker build -t tomcat-app:${{ github.run_number }} .
-          docker tag tomcat-app:${{ github.run_number }} tomcat-app:latest
 
-      # 2. Login to Nexus
+      # 5. Login to Nexus
       - name: Login to Nexus
         run: |
           echo "${{ secrets.NEXUS_PASSWORD }}" | docker login ${{ secrets.NEXUS_URL }} \
             -u "${{ secrets.NEXUS_USERNAME }}" --password-stdin
 
-      # 3. Tag and Push both Versioned and Latest
-      - name: Push to Nexus
+      # 6. Tag and Push (Specific Version AND Latest)
+      - name: Push Docker Image to Nexus
         run: |
-          # Push the specific version (e.g., tomcat-app:42)
+          # 1. Push the unique version tag (e.g., tomcat-app:10)
           docker tag tomcat-app:${{ github.run_number }} ${{ secrets.NEXUS_URL }}/tomcat-app:${{ github.run_number }}
           docker push ${{ secrets.NEXUS_URL }}/tomcat-app:${{ github.run_number }}
           
-          # Also update 'latest' in Nexus so your deployment always pulls the newest one
+          # 2. Push the 'latest' tag for general use
           docker tag tomcat-app:${{ github.run_number }} ${{ secrets.NEXUS_URL }}/tomcat-app:latest
           docker push ${{ secrets.NEXUS_URL }}/tomcat-app:latest
 
-      # 4. Cleanup
+      # 7. Cleanup local images to save disk space on the runner
       - name: Post-Build Cleanup
         if: always()
         run: |
           docker rmi tomcat-app:${{ github.run_number }} || true
           docker rmi ${{ secrets.NEXUS_URL }}/tomcat-app:${{ github.run_number }} || true
+          docker rmi ${{ secrets.NEXUS_URL }}/tomcat-app:latest || true
