@@ -9,11 +9,10 @@ jobs:
     runs-on: self-hosted
 
     steps:
-
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Install Maven (mandatory for self-hosted runner)
+      # 1. Environment Prep (Self-hosted runners keep state, so we update and install)
       - name: Install Maven
         run: |
           sudo apt update
@@ -26,7 +25,7 @@ jobs:
           java-version: '17'
           cache: 'maven'
 
-      # Build + Test + SonarQube Analysis
+      # 2. Build & Analysis
       - name: Build, Test & Sonar Scan
         run: |
           mvn clean verify sonar:sonar \
@@ -37,22 +36,26 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # Build Docker Image
+      # 3. Docker Build (Using a variable for the image name to keep it clean)
       - name: Build Docker Image
-        run: docker build -t tomcat:latest .
+        run: docker build -t tomcat-app:latest .
 
-      # Login to Nexus
+      # 4. Login to Nexus (Crucial: Explicitly include the URL)
       - name: Login to Nexus
         run: |
           echo "${{ secrets.NEXUS_PASSWORD }}" | docker login ${{ secrets.NEXUS_URL }} \
             -u "${{ secrets.NEXUS_USERNAME }}" --password-stdin
 
-      # Tag Image
-      - name: Tag Docker Image
+      # 5. Tag and Push
+      # Note: The tag MUST include the Nexus URL for Docker to know where to push.
+      - name: Push to Nexus
         run: |
-          docker tag tomcat:latest ${{ secrets.NEXUS_URL }}/tomcat/tomcat:latest
+          docker tag tomcat-app:latest ${{ secrets.NEXUS_URL }}/tomcat-app:latest
+          docker push ${{ secrets.NEXUS_URL }}/tomcat-app:latest
 
-      # Push Image
-      - name: Push Docker Image
+      # 6. Optional: Cleanup local images to save disk space on self-hosted runner
+      - name: Post-Build Cleanup
+        if: always()
         run: |
-          docker push ${{ secrets.NEXUS_URL }}/tomcat/tomcat:latest
+          docker rmi tomcat-app:latest || true
+          docker rmi ${{ secrets.NEXUS_URL }}/tomcat-app:latest || true
