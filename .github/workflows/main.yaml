@@ -1,6 +1,7 @@
 name: CI-CD Pipeline
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "master" ]
 
@@ -38,7 +39,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       # 4. Build Docker Image with Versioning
-      # We tag it locally with the run number first
       - name: Build Docker Image
         run: |
           docker build -t tomcat-app:${{ github.run_number }} .
@@ -52,15 +52,13 @@ jobs:
       # 6. Tag and Push (Specific Version AND Latest)
       - name: Push Docker Image to Nexus
         run: |
-          # 1. Push the unique version tag (e.g., tomcat-app:10)
           docker tag tomcat-app:${{ github.run_number }} ${{ secrets.NEXUS_URL }}/tomcat-app:${{ github.run_number }}
           docker push ${{ secrets.NEXUS_URL }}/tomcat-app:${{ github.run_number }}
-          
-          # 2. Push the 'latest' tag for general use
+
           docker tag tomcat-app:${{ github.run_number }} ${{ secrets.NEXUS_URL }}/tomcat-app:latest
           docker push ${{ secrets.NEXUS_URL }}/tomcat-app:latest
 
-      # 7. Cleanup local images to save disk space on the runner
+      # 7. Cleanup
       - name: Post-Build Cleanup
         if: always()
         run: |
