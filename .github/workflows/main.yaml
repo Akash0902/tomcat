@@ -3,31 +3,65 @@ name: CI-CD Pipeline
 on:
   workflow_dispatch:
   push:
-    branches: [ "master" ]
+    branches:
+      - master
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout Code
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # 1. Install Maven
+      # 2. Install Maven
       - name: Install Maven
         run: |
           sudo apt update
           sudo apt install -y maven
 
-      # 2. Set up Java 17
+      # 3. Set up Java 17
       - name: Set up Java 17
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'maven'
+          distribution: temurin
+          java-version: 17
+          cache: maven
 
-      # 3. Build & Test (Sonar optional)
-      - name: Build and Test
+      # 4. Build + Test + SonarQube Analysis
+      - name: Build, Test & Sonar Scan
         run: |
-          mvn clean verify
+          mvn clean verify sonar:sonar \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+            -Dsonar.organization=${{ secrets.SONAR_ORG }}
+
+      # 5. Build Docker Image with versioning
+      - name: Build Docker Image
+        run: |
+          docker build -t tomcat-app:${{ github.run_number }} .
+
+      # 6. Login to Nexus
+      - name: Login to Nexus
+        run: |
+          echo "${{ secrets.NEXUS_PASSWORD }}" | docker login ${{ secrets.NEXUS_URL }} \
+            -u "${{ secrets.NEXUS_USERNAME }}" --password-stdin
+
+      # 7. Tag and Push Docker Image (version + latest)
+      - name: Push Docker Image to Nexus
+        run: |
+          docker tag tomcat-app:${{ github.run_number }} ${{ secrets.NEXUS_URL }}/tomcat-app:${{ github.run_number }}
+          docker push ${{ secrets.NEXUS_URL }}/tomcat-app:${{ github.run_number }}
+
+          docker tag tomcat-app:${{ github.run_number }} ${{ secrets.NEXUS_URL }}/tomcat-app:latest
+          docker push ${{ secrets.NEXUS_URL }}/tomcat-app:latest
+
+      # 8. Cleanup local Docker images
+      - name: Post-Build Cleanup
+        if: always()
+        run: |
+          docker rmi tomcat-app:${{ github.run_number }} || true
+          docker rmi ${{ secrets.NEXUS_URL }}/tomcat-app:${{ github.run_number }} || true
+          docker rmi ${{ secrets.NEXUS_URL }}/tomcat-app:latest || true
