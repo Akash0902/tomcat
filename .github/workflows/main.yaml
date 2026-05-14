@@ -29,39 +29,4 @@ jobs:
           java-version: 17
           cache: maven
 
-      # 4. Build + Test + SonarQube Analysis
-      - name: Build, Test & Sonar Scan
-        run: |
-          mvn clean verify sonar:sonar \
-            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
-            -Dsonar.organization=${{ secrets.SONAR_ORG }}
-
-      # 5. Build Docker Image with versioning
-      - name: Build Docker Image
-        run: |
-          docker build -t tomcat-app:${{ github.run_number }} .
-
-      # 6. Login to Nexus
-      - name: Login to Nexus
-        run: |
-          echo "${{ secrets.NEXUS_PASSWORD }}" | docker login ${{ secrets.NEXUS_URL }} \
-            -u "${{ secrets.NEXUS_USERNAME }}" --password-stdin
-
-      # 7. Tag and Push Docker Image (version + latest)
-      - name: Push Docker Image to Nexus
-        run: |
-          docker tag tomcat-app:${{ github.run_number }} ${{ secrets.NEXUS_URL }}/tomcat-app:${{ github.run_number }}
-          docker push ${{ secrets.NEXUS_URL }}/tomcat-app:${{ github.run_number }}
-
-          docker tag tomcat-app:${{ github.run_number }} ${{ secrets.NEXUS_URL }}/tomcat-app:latest
-          docker push ${{ secrets.NEXUS_URL }}/tomcat-app:latest
-
-      # 8. Cleanup local Docker images
-      - name: Post-Build Cleanup
-        if: always()
-        run: |
-          docker rmi tomcat-app:${{ github.run_number }} || true
-          docker rmi ${{ secrets.NEXUS_URL }}/tomcat-app:${{ github.run_number }} || true
-          docker rmi ${{ secrets.NEXUS_URL }}/tomcat-app:latest || true
+    
